@@ -107,36 +107,32 @@ func (i Interval) Intersect(o Interval) Interval {
 			return r
 		}
 
-		// we know for sure the intervals overlap
+		// [o.Lower, i)
+		// [o.Lower, o.Upper]
+
+		// Intervals overlap for sure, so the lower bound is o.Lower
 		r.setLower(o.Lower)
 
-		if o.Upper == Infinity {
+		if o.Upper == Infinity || *i.Upper < *o.Upper {
 			r.setUpper(i.Upper)
 		} else {
-			if *i.Upper < *o.Upper {
-				r.setUpper(i.Upper)
-			} else {
-				r.setUpper(o.Upper)
-			}
+			r.setUpper(o.Upper)
 		}
 
 		return r
 	}
 
+	// i is [i.Lower, i)
 	if i.Upper == Infinity {
+		// o can be:
 
-		// i is [A, i)
-
-		// o is:
-		// (-i, B]
+		// (-i, o.Upper]
 		if o.Lower == Infinity {
-			r.setLower(i.Lower)
-			r.setUpper(o.Upper)
-			return r
+			return NewInterval(i.Lower, o.Upper)
 		}
 
-		// [B, i)
-		// [B, C]
+		// [o.Lower, i)
+		// [o.Lower, o.Upper]
 
 		r.setUpper(o.Upper)
 		if *i.Lower > *o.Lower {
@@ -149,8 +145,8 @@ func (i Interval) Intersect(o Interval) Interval {
 
 	// i is [A, B]
 
-	// o is:
-	// (-i, C]
+	// o cant be:
+	// (-i, o.Upper]
 	if o.Lower == Infinity {
 		r.setLower(i.Lower)
 
@@ -162,7 +158,7 @@ func (i Interval) Intersect(o Interval) Interval {
 		return r
 	}
 
-	// [C, i)
+	// [o.Lower, i)
 	if o.Upper == Infinity {
 		r.setUpper(i.Upper)
 
@@ -174,24 +170,18 @@ func (i Interval) Intersect(o Interval) Interval {
 		return r
 	}
 
-	// [C, D]
+	// [o.Lower, o.Upper]
 	if *o.Lower < *i.Lower {
 		r.setLower(i.Lower)
-		if *o.Upper < *i.Upper {
-			r.setUpper(o.Upper)
-		} else {
-			r.setUpper(i.Upper)
-		}
-		return r
 	} else {
 		r.setLower(o.Lower)
-		if *o.Upper < *i.Upper {
-			r.setUpper(o.Upper)
-		} else {
-			r.setUpper(i.Upper)
-		}
-		return r
 	}
+	if *o.Upper < *i.Upper {
+		r.setUpper(o.Upper)
+	} else {
+		r.setUpper(i.Upper)
+	}
+	return r
 }
 
 func NewInterval(lower, upper BoundType) Interval {
