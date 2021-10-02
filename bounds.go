@@ -10,7 +10,7 @@ func Bound(v int64) BoundType {
 	return BoundType(&v)
 }
 
-func Copy(b BoundType) BoundType {
+func boundCopy(b BoundType) BoundType {
 	if b == nil {
 		return Infinity
 	}

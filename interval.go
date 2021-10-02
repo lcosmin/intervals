@@ -19,6 +19,16 @@ type Interval struct {
 	Empty bool
 }
 
+func (i *Interval) setLower(b BoundType) {
+	i.Lower = boundCopy(b)
+	i.Empty = false
+}
+
+func (i *Interval) setUpper(b BoundType) {
+	i.Upper = boundCopy(b)
+	i.Empty = false
+}
+
 func (i Interval) String() string {
 
 	if i.Empty {
@@ -69,51 +79,48 @@ func (i Interval) Intersect(o Interval) Interval {
 		return Empty
 	}
 
-	r := Interval{}
+	var r Interval
 
 	if i.Lower == Infinity && i.Upper == Infinity {
 		// (-inf, +inf) & anything -> anything
-		return NewInterval(Copy(o.Lower), Copy(o.Upper))
+		return NewInterval(o.Lower, o.Upper)
 	}
 
 	if o.Lower == Infinity && o.Upper == Infinity {
-		// (-inf, +inf) & anything -> anything
-		return NewInterval(Copy(i.Lower), Copy(i.Upper))
+		// anything & (-inf, +inf) -> anything
+		return NewInterval(i.Lower, i.Upper)
 	}
 
 	if i.Lower == Infinity {
-		// i is (-i, A]
+		// i is (-i, i.Upper]
 
-		// o is
-		// (-i, B]
-		// [B, i)
-		// [B, C]
+		// o can be:
 
+		// (-i, o.Upper] ; in this case, result is (-i, min(i.Upper, o.Upper))
 		if o.Lower == Infinity {
-			r.Lower = Infinity
+			r.setLower(Infinity)
 			if *o.Upper < *i.Upper {
-				r.Upper = Copy(o.Upper)
+				r.setUpper(o.Upper)
 			} else {
-				r.Upper = Copy(i.Upper)
+				r.setUpper(i.Upper)
 			}
 			return r
 		}
 
 		// we know for sure the intervals overlap
-		r.Lower = Copy(o.Lower)
+		r.setLower(o.Lower)
 
 		if o.Upper == Infinity {
-			r.Upper = Copy(i.Upper)
+			r.setUpper(i.Upper)
 		} else {
 			if *i.Upper < *o.Upper {
-				r.Upper = Copy(i.Upper)
+				r.setUpper(i.Upper)
 			} else {
-				r.Upper = Copy(o.Upper)
+				r.setUpper(o.Upper)
 			}
 		}
 
 		return r
-
 	}
 
 	if i.Upper == Infinity {
@@ -123,19 +130,19 @@ func (i Interval) Intersect(o Interval) Interval {
 		// o is:
 		// (-i, B]
 		if o.Lower == Infinity {
-			r.Lower = Copy(i.Lower)
-			r.Upper = Copy(o.Upper)
+			r.setLower(i.Lower)
+			r.setUpper(o.Upper)
 			return r
 		}
 
 		// [B, i)
 		// [B, C]
 
-		r.Upper = Copy(o.Upper)
+		r.setUpper(o.Upper)
 		if *i.Lower > *o.Lower {
-			r.Lower = Copy(i.Lower)
+			r.setLower(i.Lower)
 		} else {
-			r.Lower = Copy(o.Lower)
+			r.setLower(o.Lower)
 		}
 		return r
 	}
@@ -145,43 +152,43 @@ func (i Interval) Intersect(o Interval) Interval {
 	// o is:
 	// (-i, C]
 	if o.Lower == Infinity {
-		r.Lower = Copy(i.Lower)
+		r.setLower(i.Lower)
 
 		if *o.Upper < *i.Upper {
-			r.Upper = Copy(o.Upper)
+			r.setUpper(o.Upper)
 		} else {
-			r.Upper = Copy(i.Upper)
+			r.setUpper(i.Upper)
 		}
 		return r
 	}
 
 	// [C, i)
 	if o.Upper == Infinity {
-		r.Upper = Copy(i.Upper)
+		r.setUpper(i.Upper)
 
 		if *i.Lower < *o.Lower {
-			r.Lower = Copy(o.Lower)
+			r.setLower(o.Lower)
 		} else {
-			r.Lower = Copy(i.Lower)
+			r.setLower(i.Lower)
 		}
 		return r
 	}
 
 	// [C, D]
 	if *o.Lower < *i.Lower {
-		r.Lower = Copy(i.Lower)
+		r.setLower(i.Lower)
 		if *o.Upper < *i.Upper {
-			r.Upper = Copy(o.Upper)
+			r.setUpper(o.Upper)
 		} else {
-			r.Upper = Copy(i.Upper)
+			r.setUpper(i.Upper)
 		}
 		return r
 	} else {
-		r.Lower = Copy(o.Lower)
+		r.setLower(o.Lower)
 		if *o.Upper < *i.Upper {
-			r.Upper = Copy(o.Upper)
+			r.setUpper(o.Upper)
 		} else {
-			r.Upper = Copy(i.Upper)
+			r.setUpper(i.Upper)
 		}
 		return r
 	}
@@ -192,9 +199,9 @@ func NewInterval(lower, upper BoundType) Interval {
 		return Empty
 	}
 
-	return Interval{
-		Lower: lower,
-		Upper: upper,
-		Empty: false,
-	}
+	var r Interval
+
+	r.setLower(lower)
+	r.setUpper(upper)
+	return r
 }
